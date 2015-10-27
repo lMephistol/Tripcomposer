@@ -6,8 +6,8 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.type.TypeReference;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ua.mephisto.task.domain.City;
-import ua.mephisto.task.domain.Country;
+import ua.mephisto.task.model.City;
+import ua.mephisto.task.model.Country;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,9 +18,11 @@ import java.net.URL;
 import java.util.List;
 
 /**
+ * Class for get information from server and retrieve into Java class.
+ *
  * Created by mephisto on 27.10.15.
  */
-@Component
+@Component("connector")
 public class HTTPUrlConnector {
 
     @Value("${app.key:$1$12309856$euBrWcjT767K2sP9MHcVS/}")
@@ -28,6 +30,11 @@ public class HTTPUrlConnector {
     @Value("${app.url:$http://tripcomposer.net/rest/test/countries/get}")
     private String url;
 
+    /**
+     * Send POST to server.
+     * @return List<Country>
+     * @throws IOException
+     */
     public List<Country> sendPost() throws IOException {
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -38,9 +45,10 @@ public class HTTPUrlConnector {
         con.setRequestProperty("Accept", "application/json");
         con.setRequestMethod("POST");
 
-        String connectId = "asd";
+        //Id for request.
+        String requestId = "some123";
         OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
-        wr.write(getJSONforPOST(connectId));
+        wr.write(getJSONforPOST(requestId));
         wr.flush();
         wr.close();
 
@@ -57,9 +65,24 @@ public class HTTPUrlConnector {
         } else {
             throw new IOException("Cann't get data from server");
         }
-        return parseJSONtoCountry(sb.toString());
+        return setCityCountry(parseJSONtoCountry(sb.toString(),requestId));
     }
 
+    // Add relationship between country and city
+    private List<Country> setCityCountry(List<Country> countries){
+        for(Country country: countries){
+            for(City city : country.getCities()){
+                city.setCountry(country);
+            }
+        }
+        return countries;
+    }
+
+    /**
+     * Generate our JSON request.
+     * @param value request id.
+     * @return JSON
+     */
     public String getJSONforPOST(String value) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode root = objectMapper.createObjectNode();
@@ -68,10 +91,21 @@ public class HTTPUrlConnector {
         return root.toString();
     }
 
-    public List<Country> parseJSONtoCountry(String value) throws IOException {
+    /**
+     * Parse JSON from response to objects.
+     * @param JSONvalue
+     * @param requestId
+     * @return List<Country>
+     * @throws IOException if can't parse JSON
+     */
+    public List<Country> parseJSONtoCountry(String JSONvalue,String requestId) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode root = objectMapper.readTree(value);
-        String responceId = root.get("echo").asText();
+        JsonNode root = objectMapper.readTree(JSONvalue);
+        String responseId = root.get("echo").asText();
+        //I'm not sure that it is correct to throw exception.
+        if(!responseId.equals(requestId)){
+            throw new IOException("Oops, it isn't right response.");
+        }
         List<Country> countries = objectMapper.readValue(root.get("countries"),
                 new TypeReference<List<Country>>() {
                 });
