@@ -16,10 +16,10 @@ public class App {
 
     public static void main(String[] args) {
         ApplicationContext applicationContext = new ClassPathXmlApplicationContext("spring/config/applicationContext.xml");
-        HTTPUrlConnector con = (HTTPUrlConnector) applicationContext.getBean("connector");
+        CountryRequest con = (CountryRequest) applicationContext.getBean("connector");
 
         try {
-            List<Country> countries = con.sendPost();
+            List<Country> countries = con.send();
             CountryBo countryBo = (CountryBo)applicationContext.getBean("countryBo");
             //Save data
             for(Country country: countries){

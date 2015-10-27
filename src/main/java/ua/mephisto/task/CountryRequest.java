@@ -23,7 +23,7 @@ import java.util.List;
  * Created by mephisto on 27.10.15.
  */
 @Component("connector")
-public class HTTPUrlConnector {
+public class CountryRequest {
 
     @Value("${app.key:$1$12309856$euBrWcjT767K2sP9MHcVS/}")
     private String key;
@@ -35,7 +35,7 @@ public class HTTPUrlConnector {
      * @return List<Country>
      * @throws IOException
      */
-    public List<Country> sendPost() throws IOException {
+    public List<Country> send() throws IOException {
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
@@ -58,14 +58,14 @@ public class HTTPUrlConnector {
             BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"));
             String line = null;
             while ((line = br.readLine()) != null) {
-                sb.append(line + "\n");
+                sb.append(line).append("\n");
             }
             br.close();
 
         } else {
             throw new IOException("Cann't get data from server");
         }
-        return setCityCountry(parseJSONtoCountry(sb.toString(),requestId));
+        return setCityCountry(parseJSONtoCountry(sb.toString(), requestId));
     }
 
     // Add relationship between country and city
